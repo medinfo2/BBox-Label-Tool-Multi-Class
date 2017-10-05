@@ -7,8 +7,17 @@
 #
 #-------------------------------------------------------------------------------
 from __future__ import division
-from tkinter import *
-from tkinter import ttk
+import sys
+
+if sys.version_info.major < 3:
+	from Tkinter import *
+	import tkMessageBox
+	import ttk
+else:
+	# Python 3
+	from tkinter import *
+	from tkinter import ttk
+
 from PIL import Image, ImageTk
 import os
 import glob
