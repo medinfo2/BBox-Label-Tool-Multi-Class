@@ -1,19 +1,25 @@
+#!/usr/bin/env python
+
 #-------------------------------------------------------------------------------
 # Name:        Object bounding box label tool
 # Purpose:     Label object bboxes for ImageNet Detection data
 # Author:      Qiushi
 # Created:     06/06/2014
 
-#
+# Author:      Osamu Sugiyama
+# Updated:     16/04/2018
+# Description: Modification for multilabel annotations and support for python 3
 #-------------------------------------------------------------------------------
+
 from __future__ import division
-from Tkinter import *
-import tkMessageBox
+from tkinter import *
+import tkinter.messagebox
 from PIL import Image, ImageTk
-import ttk
+from tkinter import ttk
 import os
 import glob
 import random
+import yaml
 
 # colors for the bboxes
 COLORS = ['red', 'blue', 'olive', 'teal', 'cyan', 'green', 'black']
@@ -83,9 +89,7 @@ class LabelTool():
         if os.path.exists(self.classcandidate_filename):
         	with open(self.classcandidate_filename) as cf:
         		for line in cf.readlines():
-        			# print line
         			self.cla_can_temp.append(line.strip('\n'))
-        #print self.cla_can_temp
         self.classcandidate['values'] = self.cla_can_temp
         self.classcandidate.current(0)
         self.currentLabelclass = self.classcandidate.get() #init
@@ -144,20 +148,14 @@ class LabelTool():
         if not dbg:
             s = self.entry.get()
             self.parent.focus()
-            self.category = int(s)
+            self.category = s
         else:
             s = r'D:\workspace\python\labelGUI'
-##        if not os.path.isdir(s):
-##            tkMessageBox.showerror("Error!", message = "The specified dir doesn't exist!")
-##            return
         # get image list
-        self.imageDir = os.path.join(r'./Images', '%03d' %(self.category))
-        #print self.imageDir 
-        #print self.category
+        self.imageDir = os.path.join(r'./Images', self.category)
         self.imageList = glob.glob(os.path.join(self.imageDir, '*.JPG'))
-        #print self.imageList
         if len(self.imageList) == 0:
-            print 'No .JPG images found in the specified dir!'
+            print('No .JPG images found in the specified dir!')
             return
 
         # default to the 1st image in the collection
@@ -165,14 +163,14 @@ class LabelTool():
         self.total = len(self.imageList)
 
          # set up output dir
-        self.outDir = os.path.join(r'./Labels', '%03d' %(self.category))
+        self.outDir = os.path.join(r'./Labels', self.category)
         if not os.path.exists(self.outDir):
             os.mkdir(self.outDir)
 
         # load example bboxes
         #self.egDir = os.path.join(r'./Examples', '%03d' %(self.category))
         self.egDir = os.path.join(r'./Examples/demo')
-        print os.path.exists(self.egDir)
+        print(os.path.exists(self.egDir))
         if not os.path.exists(self.egDir):
             return
         filelist = glob.glob(os.path.join(self.egDir, '*.JPG'))
@@ -190,7 +188,7 @@ class LabelTool():
             self.egLabels[i].config(image = self.egList[-1], width = SIZE[0], height = SIZE[1])
 
         self.loadImage()
-        print '%d images loaded from %s' %(self.total, s)
+        print('%d images loaded from %s' %(self.total, s))
 
     def loadImage(self):
         # load image
@@ -232,7 +230,7 @@ class LabelTool():
             f.write('%d\n' %len(self.bboxList))
             for bbox in self.bboxList:
                 f.write(' '.join(map(str, bbox)) + '\n')
-        print 'Image No. %d saved' %(self.cur)
+        print ('Image No. %d saved' %(self.cur))
 
 
     def mouseClick(self, event):
@@ -310,14 +308,31 @@ class LabelTool():
 
     def setClass(self):
     	self.currentLabelclass = self.classcandidate.get()
-    	print 'set label class to :',self.currentLabelclass
+    	print ('set label class to :',self.currentLabelclass)
 
-##    def setImage(self, imagepath = r'test2.png'):
-##        self.img = Image.open(imagepath)
-##        self.tkimg = ImageTk.PhotoImage(self.img)
-##        self.mainPanel.config(width = self.tkimg.width())
-##        self.mainPanel.config(height = self.tkimg.height())
-##        self.mainPanel.create_image(0, 0, image = self.tkimg, anchor=NW)
+
+class LabelStack(list):
+    '''
+    Supporting two types of labels description
+    - space separated values
+    - yaml
+    '''
+    def __init__(self, outdir, cor_image):
+        list(self)
+        self.outdir = outdir
+        self.cor_image = cor_image
+        self.path = os.path.join(self.outdir, self.cor_image)
+        
+        
+    def save(self, bboxList):
+        with open(self.path, 'w') as f:
+            f.write('%d\n' %len(bboxList))
+            for bbox in bboxList:
+                f.write(' '.join(map(str, bbox)) + '\n')
+
+    def load(self):
+        pass
+
 
 if __name__ == '__main__':
     root = Tk()
